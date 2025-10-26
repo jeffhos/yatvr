@@ -13,8 +13,8 @@ VIDEO_EXTENSIONS = ['.mkv', '.m4v', '.mp4', '.avi', ".webm"]
 SEASON_REGEX = re.compile(r"season (\d+)", re.I)
 TITLE_WITH_YEAR_REGEX = re.compile(r"(.+) \((\d{4})\)")
 EPISODE_REGEXES = [
-    re.compile(r"s(?P<season>\d+)e(?P<episode>\d+)"),
-    re.compile(r"(?P<season>\d+)x(?P<episode>\d+)"),
+    re.compile(r"s(?P<season>\d+)e(?P<episode>\d+)", re.I),
+    re.compile(r"(?P<season>\d+)x(?P<episode>\d+)", re.I),
     re.compile(r"\s+(?P<episode>\d+)\s+")
 ]
 EPISODE_FORMAT_STRING = "s{season:02}e{episode:02} - {title}{extension}"
