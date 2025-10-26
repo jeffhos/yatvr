@@ -72,8 +72,11 @@ def rename_episode(file: Path, show_info: ShowInfo, season: Optional[int], episo
         "extension": file.suffix
     }
     new_name = EPISODE_FORMAT_STRING.format_map(substitution_values)
-    print(f"[RENAME] {file.name} -> {new_name}")
-    file.rename(file.parent / new_name)
+    if file.name != new_name:
+        print(f"[RENAME] {file.name} -> {new_name}")
+        file.rename(file.parent / new_name)
+    else:
+        print(f"[INFO] File {file.name} already has correct name, skipping")
 
 def process_episode(file: Path, show_info: ShowInfo, season: Optional[int]):
     
