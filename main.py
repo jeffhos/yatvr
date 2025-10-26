@@ -80,12 +80,11 @@ def process_episode(file: Path, show_info: ShowInfo, season: Optional[int]):
     for pattern in EPISODE_REGEXES:
         result = pattern.search(file.name)
         if result:
-            if result.group("season"):
+            try:
                 rename_episode(file, show_info, result.group("season"), result.group("episode"))
-                return
-            else:
+            except IndexError:
                 rename_episode(file, show_info, season, result.group("episode"))
-                return
+            return
     
     print(f"[ERROR] Unable to parse episode number from {file.name}")
 
