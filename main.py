@@ -7,7 +7,7 @@ from pprint import pp
 from pathlib import Path
 import re
 from simple_term_menu import TerminalMenu
-import sys
+import os
 
 VIDEO_EXTENSIONS = ['.mkv', '.m4v', '.mp4', '.avi', ".webm"]
 SEASON_REGEX = re.compile(r"season (\d+)", re.I)
@@ -19,7 +19,7 @@ EPISODE_REGEXES = [
 ]
 EPISODE_FORMAT_STRING = "s{season:02}e{episode:02} - {title}{extension}"
 
-tmdb.API_KEY = 
+tmdb.API_KEY = os.getenv("TVDB_API_KEY")
 
 
 @dataclass
