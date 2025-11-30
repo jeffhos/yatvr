@@ -8,19 +8,19 @@ from pathlib import Path
 import re
 from simple_term_menu import TerminalMenu
 import os
+from dotenv import load_dotenv
 
 VIDEO_EXTENSIONS = ['.mkv', '.m4v', '.mp4', '.avi', ".webm"]
-SEASON_REGEX = re.compile(r"season (\d+)", re.I)
-TITLE_WITH_YEAR_REGEX = re.compile(r"(.+) \((\d{4})\)")
-EPISODE_REGEXES = [
-    re.compile(r"s(?P<season>\d+)e(?P<episode>\d+)", re.I),
-    re.compile(r"(?P<season>\d+)x(?P<episode>\d+)", re.I),
-    re.compile(r"\s+(?P<episode>\d+)\s+")
+FILE_REGEXES = [
+    re.compile(r"(?P<show_name>[^/]+)\s*\((?P<year>\d{4})\)/Season (?P<season>\d+)/", re.I),
+    re.compile(r"(?P<show_name>[^/]+)/Season (?P<season>\d+)/", re.I),
+    re.compile(r"s(?P<season>\d+)\s*e(?P<episode>\d+)", re.I),
+    re.compile(r"(?P<season>\d+)x(?P<episode>\d+)", re.I)
 ]
 EPISODE_FORMAT_STRING = "s{season:02}e{episode:02} - {title}{extension}"
 
+load_dotenv()
 tmdb.API_KEY = os.getenv("TVDB_API_KEY")
-
 
 @dataclass
 class ShowInfo:
@@ -37,20 +37,38 @@ class SeasonInfo:
 class EpisodeInfo:
     pass
 
+class NoMatchingShowException(Exception):
+    pass
 
-def find_matching_shows(guessed_show_name: str, year) -> list[ShowInfo]:
+matched_shows_cache: dict[tuple[str, Optional[str]], ShowInfo] = {}
+
+def find_matching_shows(guessed_show_name: str, year: Optional[str]) -> list[ShowInfo]:
+    if (guessed_show_name, year) in matched_shows_cache:
+        return matched_shows_cache[(guessed_show_name, year)]
+    
     search = tmdb.Search()
     shows = []
     response = search.tv(query=guessed_show_name, first_air_date_year=year)
     for show in response["results"]:
         show_info = ShowInfo(id=show["id"], name=show["name"], year=None)
         try:
-            year = date.fromisoformat(show["first_air_date"]).year
-            show_info.year = year
+            show_info.year = date.fromisoformat(show["first_air_date"]).year
         except ValueError:
             pass
         shows.append(show_info)
-    return shows
+
+    if len(shows) == 1:
+        matched_shows_cache[(guessed_show_name, year)] = shows[0]
+        return shows[0]
+    elif len(shows) < 1:
+        raise NoMatchingShowException(f"[ERROR] No shows matched \"{guessed_show_name}\"")
+    else:
+        terminal_menu = TerminalMenu([show.name for show in shows])
+        selected_index = terminal_menu.show()
+        if selected_index is not None:
+            matched_shows_cache[(guessed_show_name, year)] = shows[selected_index]
+            return shows[selected_index]
+        raise NoMatchingShowException(f"[ERROR] No show chosen")
 
 def get_episodes(show_info: ShowInfo) -> list[EpisodeInfo]:
     show = tmdb.TV(show_info.id)
@@ -78,50 +96,44 @@ def rename_episode(file: Path, show_info: ShowInfo, season: Optional[int], episo
     else:
         print(f"[INFO] File {file.name} already has correct name, skipping")
 
-def process_episode(file: Path, show_info: ShowInfo, season: Optional[int]):
-    
-    # Try to find an episode number in the filename
-    for pattern in EPISODE_REGEXES:
-        result = pattern.search(file.name)
-        if result:
-            try:
-                rename_episode(file, show_info, result.group("season"), result.group("episode"))
-            except IndexError:
-                rename_episode(file, show_info, season, result.group("episode"))
-            return
-    
-    print(f"[ERROR] Unable to parse episode number from {file.name}")
+def rename_video(file: Path, show_name: str, year: Optional[str], season: int, episode: int):
+    show = find_matching_shows(show_name, year)
 
-def process_season(file: Path, show_title: str, show_year: str, season: Optional[int]):
-    shows = find_matching_shows(show_title, show_year)
-    if len(shows) == 1:
-        process_episode(file, shows[0], season)
-    elif len(shows) < 1:
-        print(f"[ERROR] No shows matched \"{show_title}\"")
-    else:
-        terminal_menu = TerminalMenu([show.name for show in shows])
-        selected_index = terminal_menu.show()
-        if selected_index is not None:
-            process_episode(file, shows[selected_index], season)
+    rename_episode(file, show, season, episode)
 
-def process_file(file: Path):
+def process_video(file: Path):
     print(f"Processing {str(file)}")
 
-    # Try to figure out which show this file belongs to
-    
-    # First, see if we're lucky and the file is in a "<show name> (<year>)/Season <season number>/<file>" hierarchy
-    result = SEASON_REGEX.match(file.parent.name)
-    if result:
-        season = int(result.group(1))
-        season_dir = file.parent
-        result = TITLE_WITH_YEAR_REGEX.match(season_dir.parent.name)
+    # Run through all the regexes, trying to get enough information
+    show_name = None
+    year = None
+    season = None
+    episode = None
+    for regex in FILE_REGEXES:
+        result = regex.search(str(file))
         if result:
-            title = result.group(1)
-            year = result.group(2)
-            process_season(file, title, year, season)
-        else:
-            title = season_dir.parent.name
-            process_season(file, title, None, season)
+            if 'show_name' in result.groupdict() and show_name is None:
+                show_name = result.group('show_name')
+            if 'year' in result.groupdict() and year is None:
+                year = result.group('year')
+            if 'season' in result.groupdict() and season is None:
+                season = int(result.group('season'))
+            if 'episode' in result.groupdict() and episode is None:
+                episode = int(result.group('episode'))
+        
+        if show_name is not None and season is not None and episode is not None:
+            rename_video(file, show_name, year, season, episode)
+            return
+        
+    print(f"Error parsing episode info from {str(file)}")
+
+def process_file(file: Path):
+    if file.is_dir():
+        for nested_file in file.iterdir():
+            process_file(nested_file)
+    elif file.is_file():
+        if file.suffix in VIDEO_EXTENSIONS:
+            process_video(file)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -130,13 +142,7 @@ def main():
     args = parser.parse_args()
 
     for file in args.files:
-        if file.is_dir():
-            for nested_file in file.iterdir():
-                if nested_file.suffix in VIDEO_EXTENSIONS:
-                    process_file(nested_file)
-        elif file.is_file():
-            if file.suffix in VIDEO_EXTENSIONS:
-                process_file(file)
+        process_file(file)
 
 
 if __name__ == "__main__":
