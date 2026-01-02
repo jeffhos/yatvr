@@ -94,7 +94,7 @@ def rename_episode(file: Path, show_info: ShowInfo, season: Optional[int], episo
     }
     new_name = EPISODE_FORMAT_STRING.format_map(substitution_values)
     for character, replacement in CHARACTER_REPLACEMENTS.items():
-        new_name.replace(character, replacement)
+        new_name = new_name.replace(character, replacement)
     if file.name != new_name:
         print(f"[RENAME] {file.name} -> {new_name}")
         file.rename(file.parent / new_name)
