@@ -138,7 +138,7 @@ def process_file(file: Path):
         for nested_file in file.iterdir():
             process_file(nested_file)
     elif file.is_file():
-        if file.suffix in VIDEO_EXTENSIONS:
+        if file.suffix.lower() in VIDEO_EXTENSIONS:
             process_video(file)
 
 def main():
