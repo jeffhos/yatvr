@@ -16,7 +16,8 @@ FILE_REGEXES = [
     re.compile(r"(?P<show_name>[^/]+)/Season (?P<season>\d+)/", re.I),
     re.compile(r"s(?P<season>\d+)\s*e(?P<episode>\d+)", re.I),
     re.compile(r"(?P<season>\d+)x(?P<episode>\d+)", re.I),
-    re.compile(r"Episode (?P<episode>\d+)", re.I)
+    re.compile(r"Episode (?P<episode>\d+)", re.I),
+    re.compile(r"Part\s*(?P<episode>\d+)", re.I)
 ]
 EPISODE_FORMAT_STRING = "s{season:02}e{episode:02} - {title}{extension}"
 CHARACTER_REPLACEMENTS = {
