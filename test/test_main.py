@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 
-from main import (
+from yatvr.main import (
     process_video,
     process_file,
     rename_episode,
@@ -27,7 +27,7 @@ class TestRenameEpisode:
         f = tmp_path / "breaking.bad.s01e01.mkv"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes", return_value=make_episode_mock("Pilot")):
+        with patch("yatvr.main.tmdb.TV_Episodes", return_value=make_episode_mock("Pilot")):
             rename_episode(f, SHOW_INFO, season=1, episode=1)
 
         assert (tmp_path / "s01e01 - Pilot.mkv").exists()
@@ -38,7 +38,7 @@ class TestRenameEpisode:
         f.touch()
 
         with patch(
-            "main.tmdb.TV_Episodes", return_value=make_episode_mock("Bit by a Dead Bee")
+            "yatvr.main.tmdb.TV_Episodes", return_value=make_episode_mock("Bit by a Dead Bee")
         ):
             rename_episode(f, SHOW_INFO, season=2, episode=3)
 
@@ -49,7 +49,7 @@ class TestRenameEpisode:
         f.touch()
 
         with patch(
-            "main.tmdb.TV_Episodes", return_value=make_episode_mock("Cat/Mouse")
+            "yatvr.main.tmdb.TV_Episodes", return_value=make_episode_mock("Cat/Mouse")
         ):
             rename_episode(f, SHOW_INFO, season=1, episode=2)
 
@@ -60,7 +60,7 @@ class TestRenameEpisode:
         f.touch()
 
         with patch(
-            "main.tmdb.TV_Episodes", return_value=make_episode_mock("One Minute")
+            "yatvr.main.tmdb.TV_Episodes", return_value=make_episode_mock("One Minute")
         ):
             rename_episode(f, SHOW_INFO, season=3, episode=7)
 
@@ -71,7 +71,7 @@ class TestRenameEpisode:
         f = tmp_path / "episode.mkv"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes") as mock_ep:
+        with patch("yatvr.main.tmdb.TV_Episodes") as mock_ep:
             rename_episode(f, SHOW_INFO, season=None, episode=1)
             mock_ep.assert_not_called()
 
@@ -83,7 +83,7 @@ class TestRenameEpisode:
         f = tmp_path / "s09e09.mkv"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes", return_value=make_episode_mock("Felina")):
+        with patch("yatvr.main.tmdb.TV_Episodes", return_value=make_episode_mock("Felina")):
             rename_episode(f, SHOW_INFO, season=9, episode=9)
 
         assert (tmp_path / "s09e09 - Felina.mkv").exists()
@@ -106,7 +106,7 @@ class TestProcessVideo:
         f.parent.mkdir(parents=True, exist_ok=True)
         f.touch()
         calls = []
-        with patch("main.rename_video", side_effect=lambda *a, **kw: calls.append(a)):
+        with patch("yatvr.main.rename_video", side_effect=lambda *a, **kw: calls.append(a)):
             process_video(f)
         return calls
 
@@ -195,7 +195,7 @@ class TestProcessFile:
         f = tmp_path / "notes.txt"
         f.touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(f)
             mock_pv.assert_not_called()
 
@@ -203,7 +203,7 @@ class TestProcessFile:
         f = tmp_path / "s01e01.mkv"
         f.touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(f)
             mock_pv.assert_called_once_with(f)
 
@@ -213,7 +213,7 @@ class TestProcessFile:
             f = tmp_path / f"episode{ext}"
             f.touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(tmp_path)
             assert mock_pv.call_count == len(extensions)
 
@@ -221,7 +221,7 @@ class TestProcessFile:
         f = tmp_path / "episode.MKV"
         f.touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(f)
             mock_pv.assert_called_once_with(f)
 
@@ -231,7 +231,7 @@ class TestProcessFile:
         f = sub / "s01e01.mkv"
         f.touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(tmp_path)
             mock_pv.assert_called_once_with(f)
 
@@ -241,7 +241,7 @@ class TestProcessFile:
         (tmp_path / "subtitles.srt").touch()
         (tmp_path / "info.nfo").touch()
 
-        with patch("main.process_video") as mock_pv:
+        with patch("yatvr.main.process_video") as mock_pv:
             process_file(tmp_path)
             assert mock_pv.call_count == 2
 
@@ -264,8 +264,8 @@ class TestIntegration:
         mock_ep = make_episode_mock("Pilot")
 
         with (
-            patch("main.find_matching_shows", return_value=mock_show),
-            patch("main.tmdb.TV_Episodes", return_value=mock_ep),
+            patch("yatvr.main.find_matching_shows", return_value=mock_show),
+            patch("yatvr.main.tmdb.TV_Episodes", return_value=mock_ep),
         ):
             process_file(f)
 
@@ -282,8 +282,8 @@ class TestIntegration:
         mock_ep = make_episode_mock("The Ex-Girlfriend")
 
         with (
-            patch("main.find_matching_shows", return_value=mock_show),
-            patch("main.tmdb.TV_Episodes", return_value=mock_ep),
+            patch("yatvr.main.find_matching_shows", return_value=mock_show),
+            patch("yatvr.main.tmdb.TV_Episodes", return_value=mock_ep),
         ):
             process_file(f)
 
