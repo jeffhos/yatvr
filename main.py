@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 VIDEO_EXTENSIONS = ['.mkv', '.m4v', '.mp4', '.avi', ".webm"]
 FILE_REGEXES = [
-    re.compile(r"(?P<show_name>[^/]+)\s*\((?P<year>\d{4})\)/Season (?P<season>\d+)/", re.I),
+    re.compile(r"(?P<show_name>[^/]+?)\s*\((?P<year>\d{4})\)/Season (?P<season>\d+)/", re.I),
     re.compile(r"(?P<show_name>[^/]+)/Season (?P<season>\d+)/", re.I),
     re.compile(r"s(?P<season>\d+)\s*e(?P<episode>\d+)", re.I),
     re.compile(r"(?P<season>\d+)x(?P<episode>\d+)", re.I),
