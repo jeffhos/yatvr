@@ -21,6 +21,7 @@ def make_episode_mock(title: str):
 # rename_episode — tests for the file-renaming logic
 # ---------------------------------------------------------------------------
 
+
 class TestRenameEpisode:
     def test_renames_file_to_correct_format(self, tmp_path):
         f = tmp_path / "breaking.bad.s01e01.mkv"
@@ -36,7 +37,9 @@ class TestRenameEpisode:
         f = tmp_path / "episode.S02E03.MKV"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes", return_value=make_episode_mock("Bit by a Dead Bee")):
+        with patch(
+            "main.tmdb.TV_Episodes", return_value=make_episode_mock("Bit by a Dead Bee")
+        ):
             rename_episode(f, SHOW_INFO, season=2, episode=3)
 
         assert (tmp_path / "s02e03 - Bit by a Dead Bee.mkv").exists()
@@ -45,7 +48,9 @@ class TestRenameEpisode:
         f = tmp_path / "episode.s01e02.mp4"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes", return_value=make_episode_mock("Cat/Mouse")):
+        with patch(
+            "main.tmdb.TV_Episodes", return_value=make_episode_mock("Cat/Mouse")
+        ):
             rename_episode(f, SHOW_INFO, season=1, episode=2)
 
         assert (tmp_path / "s01e02 - Cat - Mouse.mp4").exists()
@@ -54,7 +59,9 @@ class TestRenameEpisode:
         f = tmp_path / "s03e07 - One Minute.mkv"
         f.touch()
 
-        with patch("main.tmdb.TV_Episodes", return_value=make_episode_mock("One Minute")):
+        with patch(
+            "main.tmdb.TV_Episodes", return_value=make_episode_mock("One Minute")
+        ):
             rename_episode(f, SHOW_INFO, season=3, episode=7)
 
         # File should still be there under the same name
@@ -85,6 +92,7 @@ class TestRenameEpisode:
 # ---------------------------------------------------------------------------
 # process_video — tests for filename parsing + rename dispatch
 # ---------------------------------------------------------------------------
+
 
 class TestProcessVideo:
     """
@@ -181,6 +189,7 @@ class TestProcessVideo:
 # process_file — tests for directory recursion and extension filtering
 # ---------------------------------------------------------------------------
 
+
 class TestProcessFile:
     def test_non_video_file_skipped(self, tmp_path):
         f = tmp_path / "notes.txt"
@@ -241,6 +250,7 @@ class TestProcessFile:
 # Integration — full pipeline with API mocked
 # ---------------------------------------------------------------------------
 
+
 class TestIntegration:
     """End-to-end: real files on disk, only TMDB API calls are mocked."""
 
@@ -253,8 +263,10 @@ class TestIntegration:
         mock_show = ShowInfo(id=1396, name="Breaking Bad", year=2008)
         mock_ep = make_episode_mock("Pilot")
 
-        with patch("main.find_matching_shows", return_value=mock_show), \
-             patch("main.tmdb.TV_Episodes", return_value=mock_ep):
+        with (
+            patch("main.find_matching_shows", return_value=mock_show),
+            patch("main.tmdb.TV_Episodes", return_value=mock_ep),
+        ):
             process_file(f)
 
         assert (season_dir / "s01e01 - Pilot.mkv").exists()
@@ -269,8 +281,10 @@ class TestIntegration:
         mock_show = ShowInfo(id=1400, name="Seinfeld", year=1989)
         mock_ep = make_episode_mock("The Ex-Girlfriend")
 
-        with patch("main.find_matching_shows", return_value=mock_show), \
-             patch("main.tmdb.TV_Episodes", return_value=mock_ep):
+        with (
+            patch("main.find_matching_shows", return_value=mock_show),
+            patch("main.tmdb.TV_Episodes", return_value=mock_ep),
+        ):
             process_file(f)
 
         assert (season_dir / "s02e01 - The Ex-Girlfriend.avi").exists()
